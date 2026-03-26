@@ -305,6 +305,31 @@ export default function Component() {
     }
   }, [hasAudio, isInitialized])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if user is typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return
+      }
+
+      switch (e.key.toLowerCase()) {
+        case ' ':
+          e.preventDefault()
+          togglePlayback()
+          break
+        case 'o':
+        case 'u':
+          e.preventDefault()
+          fileInputRef.current?.click()
+          break
+      }
+    }
+
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [isPlaying, isInitialized])
+
   return (
     <div className={`min-h-screen bg-[#101010] flex flex-col items-center justify-center p-8 ${geistMono.className}`}>
       {/* Hidden file input */}
@@ -330,12 +355,16 @@ export default function Component() {
         <span className="text-sm">Upload MP3</span>
       </motion.button>
 
-      {/* Debug info */}
-      <div className="absolute top-20 left-8 text-white/40 text-xs">
-        <div>Audio: {hasAudio ? "✓" : "✗"}</div>
-        <div>Initialized: {isInitialized ? "✓" : "✗"}</div>
-        <div>Playing: {isPlaying ? "✓" : "✗"}</div>
-        <div>Loop: {isLooping ? "✓" : "✗"}</div>
+      {/* Keyboard shortcuts hint */}
+      <div className="absolute top-20 left-8 text-white/30 text-xs font-mono space-y-1">
+        <div className="flex items-center gap-2">
+          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px]">Space</kbd>
+          <span>Play / Pause</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <kbd className="px-1.5 py-0.5 bg-white/10 rounded text-[10px]">O</kbd>
+          <span>Open file</span>
+        </div>
       </div>
 
       {/* Audio Visualizer - EFECTO OLA */}
