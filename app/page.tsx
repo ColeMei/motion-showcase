@@ -2,6 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { motion, useSpring, useMotionValue } from 'framer-motion'
+import { Instrument_Serif } from 'next/font/google'
+
+const instrumentSerif = Instrument_Serif({ 
+  weight: '400',
+  subsets: ['latin'],
+  style: ['normal', 'italic']
+})
 
 export default function Home() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -24,7 +31,6 @@ export default function Home() {
   ]
 
   const letters = ['C', 'o', 'l', 'e', 'M', 'e', 'i']
-  const isFirstName = (index: number) => index < 4
 
   useEffect(() => {
     const handleMouseMove = (e: MouseEvent) => {
@@ -70,7 +76,7 @@ export default function Home() {
   return (
     <div 
       ref={containerRef}
-      className="min-h-screen bg-[#101010] flex items-center justify-center overflow-hidden cursor-default"
+      className="h-screen bg-[#101010] flex items-center justify-center overflow-hidden cursor-default fixed inset-0"
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
     >
@@ -90,7 +96,7 @@ export default function Home() {
 
       {/* Name */}
       <motion.div
-        className="relative flex items-baseline select-none"
+        className={`relative flex items-baseline select-none ${instrumentSerif.className}`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 1.2, ease: 'easeOut' }}
@@ -100,7 +106,7 @@ export default function Home() {
           {letters.slice(0, 4).map((letter, i) => (
             <motion.span
               key={i}
-              className="text-white text-[12vw] md:text-[10vw] lg:text-[8vw] font-light tracking-tight"
+              className="text-white text-[15vw] md:text-[12vw] lg:text-[10vw] tracking-tight"
               style={{
                 x: letterOffsets[i].x,
                 y: letterOffsets[i].y,
@@ -112,14 +118,14 @@ export default function Home() {
         </div>
 
         {/* Space between names */}
-        <div className="w-[2vw]" />
+        <div className="w-[3vw]" />
 
         {/* Last name: Mei */}
         <div className="flex">
           {letters.slice(4).map((letter, i) => (
             <motion.span
               key={i + 4}
-              className="text-white text-[12vw] md:text-[10vw] lg:text-[8vw] font-light tracking-tight"
+              className="text-white text-[15vw] md:text-[12vw] lg:text-[10vw] tracking-tight"
               style={{
                 x: letterOffsets[i + 4].x,
                 y: letterOffsets[i + 4].y,
