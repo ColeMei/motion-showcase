@@ -8,7 +8,6 @@ const navItems = [
   { href: '/mesh-gradient', label: 'Mesh Gradient' },
   { href: '/time-machine', label: 'Time Machine' },
   { href: '/music-visualizer', label: 'Music Visualizer' },
-  { href: '/globe', label: 'Globe' },
 ]
 
 export function Header() {
