@@ -19,7 +19,7 @@ export function Header() {
         href="/"
         className="text-white font-medium tracking-tight hover:opacity-70 transition-opacity"
       >
-        Showcase
+        Cole Mei
       </Link>
       <nav className="flex items-center gap-6 text-sm">
         {navItems.map((item) => {

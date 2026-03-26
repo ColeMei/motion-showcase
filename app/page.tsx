@@ -3,24 +3,21 @@
 import Link from 'next/link'
 import { motion } from 'framer-motion'
 
-const components = [
+const works = [
   {
     href: '/mesh-gradient',
     title: 'Mesh Gradient',
-    description: 'An interactive animated character with mesh gradient effects. Move your mouse — the eyes follow.',
-    tag: 'SVG · Framer Motion',
+    description: 'Interactive character with eyes that follow.',
   },
   {
     href: '/time-machine',
     title: 'Time Machine',
-    description: 'A stacked image carousel. Scroll, swipe, or use arrow keys to navigate through frames.',
-    tag: 'Carousel · Touch · Keyboard',
+    description: 'A stacked image carousel through frames.',
   },
   {
     href: '/music-visualizer',
     title: 'Music Visualizer',
-    description: 'Real-time audio frequency visualizer. Play the default track or upload your own MP3.',
-    tag: 'Web Audio API · 80 bars',
+    description: 'Real-time audio frequency visualization.',
   },
 ]
 
@@ -29,32 +26,19 @@ const containerVariants = {
   visible: {
     opacity: 1,
     transition: {
-      staggerChildren: 0.1,
-      delayChildren: 0.2,
+      staggerChildren: 0.08,
+      delayChildren: 0.3,
     },
   },
 }
 
 const itemVariants = {
-  hidden: { opacity: 0, y: 20 },
+  hidden: { opacity: 0, y: 12 },
   visible: {
     opacity: 1,
     y: 0,
     transition: {
-      duration: 0.5,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    },
-  },
-}
-
-const cardVariants = {
-  hidden: { opacity: 0, y: 30, scale: 0.95 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    scale: 1,
-    transition: {
-      duration: 0.5,
+      duration: 0.6,
       ease: [0.25, 0.46, 0.45, 0.94],
     },
   },
@@ -62,39 +46,56 @@ const cardVariants = {
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-[#101010] flex flex-col items-center justify-center p-8">
+    <div className="min-h-screen bg-[#101010] flex flex-col justify-center px-8 py-24 md:px-16 lg:px-24">
       <motion.div
-        className="max-w-3xl w-full"
+        className="max-w-2xl"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
       >
+        {/* Name */}
         <motion.h1
-          className="text-white text-4xl font-medium tracking-tight mb-2"
+          className="text-white text-4xl md:text-5xl font-medium tracking-tight mb-8"
           variants={itemVariants}
         >
-          Showcase
+          Cole Mei
         </motion.h1>
+
+        {/* Tagline */}
         <motion.p
-          className="text-white/40 mb-12"
+          className="text-white/50 text-lg md:text-xl leading-relaxed mb-16 max-w-lg"
           variants={itemVariants}
         >
-          Three components. Pick one.
+          <span className="text-white/80 italic">Crafting interfaces.</span>{' '}
+          Building polished software and web experiences. Experimenting with magical details in user interfaces.
         </motion.p>
-        <div className="grid gap-4 sm:grid-cols-3">
-          {components.map((c) => (
-            <motion.div key={c.href} variants={cardVariants}>
-              <Link
-                href={c.href}
-                className="group block h-full p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5 transition-all duration-300"
-              >
-                <div className="text-white/30 text-xs font-mono mb-4">{c.tag}</div>
-                <h2 className="text-white font-medium mb-2 group-hover:text-white/90 transition-colors">{c.title}</h2>
-                <p className="text-white/50 text-sm leading-relaxed">{c.description}</p>
-              </Link>
-            </motion.div>
-          ))}
-        </div>
+
+        {/* Works */}
+        <motion.div variants={itemVariants}>
+          <h2 className="text-white/40 text-sm tracking-wide uppercase mb-6">
+            Works
+          </h2>
+          <div className="space-y-4">
+            {works.map((work) => (
+              <motion.div key={work.href} variants={itemVariants}>
+                <Link
+                  href={work.href}
+                  className="group flex items-baseline gap-4 py-2 -mx-2 px-2 rounded-lg hover:bg-white/5 transition-colors duration-200"
+                >
+                  <span className="text-white font-medium group-hover:underline underline-offset-4 decoration-white/40">
+                    {work.title}
+                  </span>
+                  <span className="text-white/30 text-sm hidden sm:inline">
+                    {work.description}
+                  </span>
+                  <span className="text-white/20 group-hover:text-white/50 transition-colors ml-auto">
+                    ↗
+                  </span>
+                </Link>
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </motion.div>
     </div>
   )
