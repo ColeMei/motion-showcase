@@ -14,7 +14,7 @@ export function Header() {
   const pathname = usePathname()
 
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-[#101010]/95 backdrop-blur-sm">
+    <header className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 bg-[#101010]">
       <Link
         href="/"
         className={cn(
@@ -32,16 +32,13 @@ export function Header() {
               key={item.href}
               href={item.href}
               className={cn(
-                'relative py-1 transition-colors',
+                'transition-colors',
                 isActive
-                  ? 'text-white'
+                  ? 'text-white font-medium'
                   : 'text-white/50 hover:text-white/80'
               )}
             >
               {item.label}
-              {isActive && (
-                <span className="absolute -bottom-1 left-0 right-0 h-px bg-white/60" />
-              )}
             </Link>
           )
         })}
