@@ -1,102 +1,167 @@
 'use client'
 
-import Link from 'next/link'
-import { motion } from 'framer-motion'
-
-const works = [
-  {
-    href: '/mesh-gradient',
-    title: 'Mesh Gradient',
-    description: 'Interactive character with eyes that follow.',
-  },
-  {
-    href: '/time-machine',
-    title: 'Time Machine',
-    description: 'A stacked image carousel through frames.',
-  },
-  {
-    href: '/music-visualizer',
-    title: 'Music Visualizer',
-    description: 'Real-time audio frequency visualization.',
-  },
-]
-
-const containerVariants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: {
-      staggerChildren: 0.08,
-      delayChildren: 0.3,
-    },
-  },
-}
-
-const itemVariants = {
-  hidden: { opacity: 0, y: 12 },
-  visible: {
-    opacity: 1,
-    y: 0,
-    transition: {
-      duration: 0.6,
-      ease: [0.25, 0.46, 0.45, 0.94],
-    },
-  },
-}
+import { useEffect, useRef, useState } from 'react'
+import { motion, useSpring, useMotionValue } from 'framer-motion'
 
 export default function Home() {
+  const containerRef = useRef<HTMLDivElement>(null)
+  const [isHovering, setIsHovering] = useState(false)
+  
+  const mouseX = useMotionValue(0)
+  const mouseY = useMotionValue(0)
+  
+  // Smooth spring physics for each letter's offset
+  const springConfig = { damping: 25, stiffness: 150 }
+  
+  const letterOffsets = [
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+    { x: useSpring(0, springConfig), y: useSpring(0, springConfig) },
+  ]
+
+  const letters = ['C', 'o', 'l', 'e', 'M', 'e', 'i']
+  const isFirstName = (index: number) => index < 4
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return
+      
+      const rect = containerRef.current.getBoundingClientRect()
+      const centerX = rect.left + rect.width / 2
+      const centerY = rect.top + rect.height / 2
+      
+      const deltaX = e.clientX - centerX
+      const deltaY = e.clientY - centerY
+      
+      mouseX.set(deltaX)
+      mouseY.set(deltaY)
+      
+      // Each letter reacts differently based on position
+      letterOffsets.forEach((offset, i) => {
+        const factor = (i - 3.5) * 0.08 // Letters spread from center
+        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+        const intensity = Math.min(distance / 400, 1)
+        
+        offset.x.set(deltaX * factor * intensity * 0.3)
+        offset.y.set(deltaY * factor * intensity * 0.15)
+      })
+    }
+
+    const handleMouseLeave = () => {
+      letterOffsets.forEach((offset) => {
+        offset.x.set(0)
+        offset.y.set(0)
+      })
+    }
+
+    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mouseleave', handleMouseLeave)
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove)
+      window.removeEventListener('mouseleave', handleMouseLeave)
+    }
+  }, [])
+
   return (
-    <div className="min-h-screen bg-[#101010] flex flex-col justify-center px-8 py-24 md:px-16 lg:px-24">
+    <div 
+      ref={containerRef}
+      className="min-h-screen bg-[#101010] flex items-center justify-center overflow-hidden cursor-default"
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+    >
+      {/* Subtle gradient glow behind text */}
       <motion.div
-        className="max-w-2xl"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
+        className="absolute w-[600px] h-[600px] rounded-full opacity-20 blur-3xl pointer-events-none"
+        style={{
+          background: 'radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%)',
+          x: mouseX,
+          y: mouseY,
+        }}
+        animate={{
+          scale: isHovering ? 1.2 : 1,
+        }}
+        transition={{ duration: 0.8 }}
+      />
+
+      {/* Name */}
+      <motion.div
+        className="relative flex items-baseline select-none"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 1.2, ease: 'easeOut' }}
       >
-        {/* Name */}
-        <motion.h1
-          className="text-white text-4xl md:text-5xl font-medium tracking-tight mb-8"
-          variants={itemVariants}
-        >
-          Cole Mei
-        </motion.h1>
+        {/* First name: Cole */}
+        <div className="flex">
+          {letters.slice(0, 4).map((letter, i) => (
+            <motion.span
+              key={i}
+              className="text-white text-[12vw] md:text-[10vw] lg:text-[8vw] font-light tracking-tight"
+              style={{
+                x: letterOffsets[i].x,
+                y: letterOffsets[i].y,
+              }}
+            >
+              {letter}
+            </motion.span>
+          ))}
+        </div>
 
-        {/* Tagline */}
-        <motion.p
-          className="text-white/50 text-lg md:text-xl leading-relaxed mb-16 max-w-lg"
-          variants={itemVariants}
-        >
-          <span className="text-white/80 italic">Crafting interfaces.</span>{' '}
-          Building polished software and web experiences. Experimenting with magical details in user interfaces.
-        </motion.p>
+        {/* Space between names */}
+        <div className="w-[2vw]" />
 
-        {/* Works */}
-        <motion.div variants={itemVariants}>
-          <h2 className="text-white/40 text-sm tracking-wide uppercase mb-6">
-            Works
-          </h2>
-          <div className="space-y-4">
-            {works.map((work) => (
-              <motion.div key={work.href} variants={itemVariants}>
-                <Link
-                  href={work.href}
-                  className="group flex items-baseline gap-4 py-2 -mx-2 px-2 rounded-lg hover:bg-white/5 transition-colors duration-200"
-                >
-                  <span className="text-white font-medium group-hover:underline underline-offset-4 decoration-white/40">
-                    {work.title}
-                  </span>
-                  <span className="text-white/30 text-sm hidden sm:inline">
-                    {work.description}
-                  </span>
-                  <span className="text-white/20 group-hover:text-white/50 transition-colors ml-auto">
-                    ↗
-                  </span>
-                </Link>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
+        {/* Last name: Mei */}
+        <div className="flex">
+          {letters.slice(4).map((letter, i) => (
+            <motion.span
+              key={i + 4}
+              className="text-white text-[12vw] md:text-[10vw] lg:text-[8vw] font-light tracking-tight"
+              style={{
+                x: letterOffsets[i + 4].x,
+                y: letterOffsets[i + 4].y,
+              }}
+            >
+              {letter}
+            </motion.span>
+          ))}
+        </div>
       </motion.div>
+
+      {/* Floating particles */}
+      {[...Array(6)].map((_, i) => (
+        <motion.div
+          key={i}
+          className="absolute w-1 h-1 bg-white/20 rounded-full pointer-events-none"
+          initial={{
+            x: Math.random() * 400 - 200,
+            y: Math.random() * 400 - 200,
+            opacity: 0,
+          }}
+          animate={{
+            x: [
+              Math.random() * 400 - 200,
+              Math.random() * 400 - 200,
+              Math.random() * 400 - 200,
+            ],
+            y: [
+              Math.random() * 400 - 200,
+              Math.random() * 400 - 200,
+              Math.random() * 400 - 200,
+            ],
+            opacity: [0, 0.4, 0],
+          }}
+          transition={{
+            duration: 8 + i * 2,
+            repeat: Infinity,
+            ease: 'easeInOut',
+            delay: i * 1.5,
+          }}
+        />
+      ))}
     </div>
   )
 }
