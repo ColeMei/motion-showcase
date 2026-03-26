@@ -1,4 +1,7 @@
+'use client'
+
 import Link from 'next/link'
+import { motion } from 'framer-motion'
 
 const components = [
   {
@@ -21,26 +24,78 @@ const components = [
   },
 ]
 
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+}
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+}
+
+const cardVariants = {
+  hidden: { opacity: 0, y: 30, scale: 0.95 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    scale: 1,
+    transition: {
+      duration: 0.5,
+      ease: [0.25, 0.46, 0.45, 0.94],
+    },
+  },
+}
+
 export default function Home() {
   return (
     <div className="min-h-screen bg-[#101010] flex flex-col items-center justify-center p-8">
-      <div className="max-w-3xl w-full">
-        <h1 className="text-white text-4xl font-medium tracking-tight mb-2">Showcase</h1>
-        <p className="text-white/40 mb-12">Three components. Pick one.</p>
+      <motion.div
+        className="max-w-3xl w-full"
+        variants={containerVariants}
+        initial="hidden"
+        animate="visible"
+      >
+        <motion.h1
+          className="text-white text-4xl font-medium tracking-tight mb-2"
+          variants={itemVariants}
+        >
+          Showcase
+        </motion.h1>
+        <motion.p
+          className="text-white/40 mb-12"
+          variants={itemVariants}
+        >
+          Three components. Pick one.
+        </motion.p>
         <div className="grid gap-4 sm:grid-cols-3">
           {components.map((c) => (
-            <Link
-              key={c.href}
-              href={c.href}
-              className="group block p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all duration-200"
-            >
-              <div className="text-white/30 text-xs font-mono mb-4">{c.tag}</div>
-              <h2 className="text-white font-medium mb-2 group-hover:opacity-80 transition-opacity">{c.title}</h2>
-              <p className="text-white/50 text-sm leading-relaxed">{c.description}</p>
-            </Link>
+            <motion.div key={c.href} variants={cardVariants}>
+              <Link
+                href={c.href}
+                className="group block h-full p-6 rounded-xl border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 hover:scale-[1.02] hover:shadow-lg hover:shadow-white/5 transition-all duration-300"
+              >
+                <div className="text-white/30 text-xs font-mono mb-4">{c.tag}</div>
+                <h2 className="text-white font-medium mb-2 group-hover:text-white/90 transition-colors">{c.title}</h2>
+                <p className="text-white/50 text-sm leading-relaxed">{c.description}</p>
+              </Link>
+            </motion.div>
           ))}
         </div>
-      </div>
+      </motion.div>
     </div>
   )
 }
