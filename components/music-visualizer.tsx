@@ -321,7 +321,7 @@ export default function Component() {
 
       {/* Upload button - SIEMPRE VISIBLE */}
       <motion.button
-        className="absolute top-8 right-8 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white/60 hover:text-white rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200"
+        className="absolute top-20 right-8 flex items-center gap-2 px-4 py-2 bg-white/10 hover:bg-white/20 text-white/60 hover:text-white rounded-lg border border-white/20 hover:border-white/40 transition-all duration-200"
         onClick={() => fileInputRef.current?.click()}
         whileHover={{ scale: 1.05 }}
         whileTap={{ scale: 0.95 }}
@@ -331,7 +331,7 @@ export default function Component() {
       </motion.button>
 
       {/* Debug info */}
-      <div className="absolute top-8 left-8 text-white/40 text-xs">
+      <div className="absolute top-20 left-8 text-white/40 text-xs">
         <div>Audio: {hasAudio ? "✓" : "✗"}</div>
         <div>Initialized: {isInitialized ? "✓" : "✗"}</div>
         <div>Playing: {isPlaying ? "✓" : "✗"}</div>
