@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
-import { motion, useSpring, useMotionValue } from 'framer-motion'
+import { motion, useSpring, useMotionValue, useReducedMotion } from 'framer-motion'
 import { Instrument_Serif } from 'next/font/google'
 
 const instrumentSerif = Instrument_Serif({ 
@@ -11,8 +11,25 @@ const instrumentSerif = Instrument_Serif({
 })
 
 export default function Home() {
+  const prefersReducedMotion = useReducedMotion()
   const containerRef = useRef<HTMLDivElement>(null)
   const [isHovering, setIsHovering] = useState(false)
+  const [particles, setParticles] = useState<Array<{
+    initial: { x: number; y: number }
+    frames: { x: number[]; y: number[] }
+  }>>([])
+
+  useEffect(() => {
+    setParticles(
+      Array.from({ length: 6 }, () => ({
+        initial: { x: Math.random() * 400 - 200, y: Math.random() * 400 - 200 },
+        frames: {
+          x: Array.from({ length: 3 }, () => Math.random() * 400 - 200),
+          y: Array.from({ length: 3 }, () => Math.random() * 400 - 200),
+        },
+      }))
+    )
+  }, [])
   
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
@@ -47,14 +64,16 @@ export default function Home() {
       mouseY.set(deltaY)
       
       // Each letter reacts differently based on position
-      letterOffsets.forEach((offset, i) => {
-        const factor = (i - 3.5) * 0.08 // Letters spread from center
-        const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
-        const intensity = Math.min(distance / 400, 1)
-        
-        offset.x.set(deltaX * factor * intensity * 0.3)
-        offset.y.set(deltaY * factor * intensity * 0.15)
-      })
+      if (!prefersReducedMotion) {
+        letterOffsets.forEach((offset, i) => {
+          const factor = (i - 3.5) * 0.08 // Letters spread from center
+          const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY)
+          const intensity = Math.min(distance / 400, 1)
+
+          offset.x.set(deltaX * factor * intensity * 0.3)
+          offset.y.set(deltaY * factor * intensity * 0.15)
+        })
+      }
     }
 
     const handleMouseLeave = () => {
@@ -66,11 +85,13 @@ export default function Home() {
 
     window.addEventListener('mousemove', handleMouseMove)
     window.addEventListener('mouseleave', handleMouseLeave)
-    
+
     return () => {
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('mouseleave', handleMouseLeave)
     }
+  // letterOffsets holds stable Framer Motion spring values — safe to omit
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   return (
@@ -137,27 +158,15 @@ export default function Home() {
         </div>
       </motion.div>
 
-      {/* Floating particles */}
-      {[...Array(6)].map((_, i) => (
+      {/* Floating particles — rendered only after hydration to avoid SSR/client mismatch */}
+      {particles.map((p, i) => (
         <motion.div
           key={i}
           className="absolute w-1 h-1 bg-white/20 rounded-full pointer-events-none"
-          initial={{
-            x: Math.random() * 400 - 200,
-            y: Math.random() * 400 - 200,
-            opacity: 0,
-          }}
+          initial={{ x: p.initial.x, y: p.initial.y, opacity: 0 }}
           animate={{
-            x: [
-              Math.random() * 400 - 200,
-              Math.random() * 400 - 200,
-              Math.random() * 400 - 200,
-            ],
-            y: [
-              Math.random() * 400 - 200,
-              Math.random() * 400 - 200,
-              Math.random() * 400 - 200,
-            ],
+            x: p.frames.x,
+            y: p.frames.y,
             opacity: [0, 0.4, 0],
           }}
           transition={{

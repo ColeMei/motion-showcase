@@ -3,7 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect, useRef } from "react"
-import { motion } from "framer-motion"
+import { motion, useReducedMotion } from "framer-motion"
 import { Geist_Mono } from "next/font/google"
 import { Upload } from "lucide-react"
 
@@ -13,12 +13,12 @@ const geistMono = Geist_Mono({
 })
 
 export default function Component() {
+  const prefersReducedMotion = useReducedMotion()
   const [isPlaying, setIsPlaying] = useState(false)
   const [audioData, setAudioData] = useState<number[]>(new Array(80).fill(0.01))
   const [currentTrack, setCurrentTrack] = useState<string>("~/ 2 Million")
-  const [hasAudio, setHasAudio] = useState(true) // Ahora true por defecto
+  const [hasAudio, setHasAudio] = useState(true)
   const [isInitialized, setIsInitialized] = useState(false)
-  const [isLooping, setIsLooping] = useState(false)
   const [showInitialAnimation, setShowInitialAnimation] = useState(false)
 
   // Audio refs
@@ -28,10 +28,9 @@ export default function Component() {
   const sourceRef = useRef<MediaElementAudioSourceNode | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  // Cargar audio por defecto al montar el componente
+  // Load default audio on mount
   useEffect(() => {
     if (audioRef.current && !audioRef.current.src) {
-      // Usar la URL raw de GitHub para el archivo MP3
       audioRef.current.src = "https://raw.githubusercontent.com/Railly/drive/main/2_Million.mp3"
       audioRef.current.load()
     }
@@ -41,40 +40,32 @@ export default function Component() {
     if (!audioRef.current || isInitialized) return
 
     try {
-      console.log("Initializing audio context...")
-
-      // Create audio context
       audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)()
 
-      // Resume if suspended
       if (audioContextRef.current.state === "suspended") {
         await audioContextRef.current.resume()
       }
 
-      // Create analyser
       analyserRef.current = audioContextRef.current.createAnalyser()
       analyserRef.current.fftSize = 1024
       analyserRef.current.smoothingTimeConstant = 0.2
 
-      // Create source
       sourceRef.current = audioContextRef.current.createMediaElementSource(audioRef.current)
 
-      // Connect: source -> analyser -> destination
+      // source -> analyser -> destination
       sourceRef.current.connect(analyserRef.current)
       analyserRef.current.connect(audioContextRef.current.destination)
 
       setIsInitialized(true)
-      console.log("Audio context initialized successfully")
     } catch (error) {
       console.error("Error initializing audio context:", error)
     }
   }
 
-  // Función para suavizar datos (efecto ola)
+  // Smooth neighboring bars to create a wave effect
   const smoothData = (data: number[]) => {
     const smoothed = [...data]
 
-    // Aplicar suavizado entre barras vecinas para efecto ola
     for (let i = 1; i < smoothed.length - 1; i++) {
       smoothed[i] = (data[i - 1] + data[i] * 2 + data[i + 1]) / 4
     }
@@ -82,7 +73,7 @@ export default function Component() {
     return smoothed
   }
 
-  // Función para actualizar datos con efecto OLA - AMBOS LADOS SINTÉTICOS
+  // Update bar heights from FFT data with synthetic wave symmetry
   const updateAudioData = () => {
     if (!analyserRef.current) return
 
@@ -95,28 +86,27 @@ export default function Component() {
     const rawData = []
     const usefulFreqRange = Math.floor(bufferLength * 0.3)
 
-    // Calcular nivel general de audio para threshold
+    // Compute average energy to gate silent frames
     let totalEnergy = 0
     for (let i = 0; i < usefulFreqRange; i++) {
       totalEnergy += dataArray[i]
     }
     const averageEnergy = totalEnergy / usefulFreqRange
-    const energyThreshold = 50 // Mantener alto
+    const energyThreshold = 50
 
     for (let i = 0; i < bars; i++) {
       let value = 0
 
       if (i < 40) {
-        // Lado izquierdo: AHORA TAMBIÉN SINTÉTICO
+        // Left side: real FFT data with slight synthetic variation
         const freqIndex = Math.floor((i / 40) * usefulFreqRange)
         const baseValue = dataArray[freqIndex] || 0
 
-        // Añadir variación sintética al lado izquierdo también
-        const timeOffset = Date.now() * 0.006 + i * 0.12 // Diferentes parámetros que el derecho
+        const timeOffset = Date.now() * 0.006 + i * 0.12
         const synthetic = Math.sin(timeOffset) * 0.25 + Math.cos(timeOffset * 1.5) * 0.15
-        value = baseValue * (0.8 + synthetic) // Ligeramente diferente al derecho
+        value = baseValue * (0.8 + synthetic)
       } else {
-        // Lado derecho: crear datos sintéticos basados en el lado izquierdo
+        // Right side: mirrored with independent synthetic variation
         const mirrorIndex = 79 - i
         const baseIndex = Math.floor((mirrorIndex / 40) * usefulFreqRange)
         const baseValue = dataArray[baseIndex] || 0
@@ -128,83 +118,65 @@ export default function Component() {
 
       let normalized = value / 255
 
-      // Si el nivel general está muy bajo, no mostrar nada
       if (averageEnergy < energyThreshold) {
         normalized = 0.01
       } else {
-        // Amplificación por posición para efecto ola - REDUCIDA 40% MÁS
+        // Position-based amplification for wave shape
         if (i < 20) {
-          normalized *= 1.5 // Era 2.5, ahora 1.5 (40% menos)
+          normalized *= 1.5
         } else if (i < 40) {
-          normalized *= 1.2 // Era 2.0, ahora 1.2 (40% menos)
+          normalized *= 1.2
         } else if (i < 60) {
-          normalized *= 1.05 // Era 1.75, ahora 1.05 (40% menos)
+          normalized *= 1.05
         } else {
-          normalized *= 0.9 // Era 1.5, ahora 0.9 (40% menos)
+          normalized *= 0.9
         }
 
-        // Curva suave para efecto ola
         normalized = Math.pow(Math.max(0, normalized), 0.4)
 
-        // SISTEMA DE NIVELES - CONTRASTE EXTREMO + REDUCCIÓN 40%
+        // Level system for high contrast between silent and loud bars
         if (normalized > 0.8) {
-          // NIVEL SÚPER ALTO: Explosivo - MÁS CONTRASTE
-          normalized = Math.pow(normalized, 0.15) * 1.8 // Era 2.0, ahora 1.8 (40% menos) pero curva más agresiva
+          normalized = Math.pow(normalized, 0.15) * 1.8
         } else if (normalized > 0.7) {
-          // NIVEL ALTO: Elevado - REDUCIDO
-          normalized = Math.pow(normalized, 0.3) * 0.9 // Era 1.5, ahora 0.9 (40% menos)
+          normalized = Math.pow(normalized, 0.3) * 0.9
         } else if (normalized > 0.5) {
-          // NIVEL MEDIO-ALTO: Súper reducido para contraste extremo
-          normalized = Math.pow(normalized, 0.8) * 0.1 // Era 0.25, ahora 0.1 (60% menos para más contraste)
+          normalized = Math.pow(normalized, 0.8) * 0.1
         } else if (normalized > 0.45) {
-          // NIVEL MEDIO-BAJO: Eliminado
           normalized = 0.01
         } else {
-          // NIVEL BAJO: Desaparecer
           normalized = 0.01
         }
 
-        // Threshold individual MÁS ESTRICTO
         if (normalized < 0.45) {
-          // Era 0.4, ahora 0.45 - más estricto
           normalized = 0.01
         }
       }
 
-      const final = Math.max(0, Math.min(1.2, normalized)) // Era 2.0, ahora 1.2 (40% menos)
+      const final = Math.max(0, Math.min(1.2, normalized))
       rawData.push(final)
     }
 
-    // Aplicar suavizado para efecto ola
     const smoothedData = smoothData(rawData)
-
-    // Aplicar suavizado adicional para olas más fluidas
     const extraSmoothed = smoothData(smoothedData)
 
     setAudioData(extraSmoothed)
   }
 
-  // useEffect para manejar el loop de visualización
+  // Visualization loop using requestAnimationFrame
   useEffect(() => {
-    let intervalId: NodeJS.Timeout | null = null
+    if (!isPlaying) return
 
-    if (isPlaying) {
-      setIsLooping(true)
-      console.log("Starting visualization loop")
+    let rafId: number
 
-      intervalId = setInterval(() => {
-        updateAudioData()
-      }, 25) // 40 FPS para fluidez de ola
-    } else {
-      setIsLooping(false)
-      console.log("Stopping visualization loop")
+    const loop = () => {
+      updateAudioData()
+      rafId = requestAnimationFrame(loop)
     }
 
-    return () => {
-      if (intervalId) {
-        clearInterval(intervalId)
-      }
-    }
+    rafId = requestAnimationFrame(loop)
+
+    return () => cancelAnimationFrame(rafId)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isPlaying, isInitialized])
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -240,7 +212,6 @@ export default function Component() {
         setShowInitialAnimation(true)
         setTimeout(() => setShowInitialAnimation(false), 2000)
 
-        console.log("Audio file loaded:", file.name)
       }
     } catch (error) {
       console.error("Error loading audio file:", error)
@@ -261,10 +232,8 @@ export default function Component() {
 
       if (isPlaying) {
         audioRef.current.pause()
-        console.log("Paused")
       } else {
         await audioRef.current.play()
-        console.log("Playing")
       }
 
       setIsPlaying(!isPlaying)
@@ -279,7 +248,6 @@ export default function Component() {
     if (!audio) return
 
     const handleCanPlay = () => {
-      console.log("Audio can play")
       if (!isInitialized) {
         initializeAudioContext()
       }
@@ -339,9 +307,6 @@ export default function Component() {
       <audio
         ref={audioRef}
         crossOrigin="anonymous"
-        onLoadedData={() => console.log("Audio loaded")}
-        onPlay={() => console.log("Audio started playing")}
-        onPause={() => console.log("Audio paused")}
       />
 
       {/* Upload button - SIEMPRE VISIBLE */}
@@ -383,7 +348,7 @@ export default function Component() {
               opacity: height > 0 ? 1 : 0,
               scaleX: showInitialAnimation ? 1 : 1,
             }}
-            transition={{
+            transition={prefersReducedMotion ? { duration: 0 } : {
               height: {
                 type: "spring",
                 stiffness: height > 0 ? 400 : 200,
@@ -408,6 +373,7 @@ export default function Component() {
       <div className="flex items-center gap-6 text-white">
         <motion.button
           onClick={togglePlayback}
+          aria-label={isPlaying ? "Pause" : "Play"}
           className="flex items-center justify-center w-12 h-12 rounded-full"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
